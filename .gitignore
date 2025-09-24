@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.sqlite3
+
+# Virtual env
+.venv/
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Artifacts
+dist/
+build/
+htmlcov/
+.coverage*
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Project outputs
+outputs/*
+!outputs/.gitkeep
