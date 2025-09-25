@@ -15,8 +15,10 @@ _PROMPT_TEMPLATE = """
 You are a CAD command extraction assistant.
 Extract drawing commands from the user utterance below.
 Return **only** JSON that satisfies this schema: {schema}
-Only use the command types draw_circle, draw_line, draw_rect.
+Only use the command types draw_circle, draw_line, draw_rect, draw_polyline, draw_arc, draw_ellipse, draw_text.
+When you mention lengths or radii include the accompanying *_unit field with values "mm" or "in".
 Coerce numeric strings to numbers. Use null when data is missing.
+Session context: {context}
 User utterance: {utterance}
 """.strip()
 
@@ -28,10 +30,16 @@ class LLMParser:
 
     @staticmethod
     def _format_prompt(
-        utterance: str, schema: dict[str, Any], errors: list[dict[str, Any]] | None = None
+        utterance: str,
+        schema: dict[str, Any],
+        errors: list[dict[str, Any]] | None = None,
+        *,
+        context: dict[str, Any] | None = None,
     ) -> str:
         prompt = _PROMPT_TEMPLATE.format(
-            schema=json.dumps(schema, indent=2, sort_keys=True), utterance=utterance
+            schema=json.dumps(schema, indent=2, sort_keys=True),
+            utterance=utterance,
+            context=json.dumps(context or {}, indent=2, sort_keys=True),
         )
         if errors:
             prompt += "\nPrevious response failed validation with these issues:\n"
@@ -44,7 +52,7 @@ class LLMParser:
         errors: list[dict[str, Any]] | None = None
 
         for attempt in range(self.max_retries):
-            prompt = self._format_prompt(text, schema, errors)
+            prompt = self._format_prompt(text, schema, errors, context=context)
             provider_context: dict[str, Any] = {"attempt": attempt}
             if context:
                 provider_context.update(context)

@@ -18,6 +18,9 @@ class Coordinate(BaseModel):
         default="absolute",
         description="Whether the coordinate is absolute (global) or relative to the active cursor",
     )
+    unit: Literal["mm", "in"] | None = Field(
+        default=None, description="Optional unit used by the coordinate components."
+    )
 
     @field_validator("system")
     @classmethod
@@ -34,7 +37,10 @@ class Command(BaseModel):
 class DrawCircle(Command):
     type: Literal["draw_circle"] = "draw_circle"
     center: Coordinate = Field(default_factory=Coordinate)
-    radius: float | None = Field(default=None, ge=0, description="Radius in drawing units")
+    radius: float | None = Field(default=None, ge=0, description="Radius value")
+    radius_unit: Literal["mm", "in"] | None = Field(
+        default=None, description="Unit associated with the radius if provided"
+    )
 
 
 class DrawLine(Command):
@@ -51,11 +57,46 @@ class DrawRect(Command):
     )
     position: Coordinate = Field(default_factory=Coordinate)
     width: float | None = Field(default=None, ge=0)
+    width_unit: Literal["mm", "in"] | None = Field(default=None)
     height: float | None = Field(default=None, ge=0)
+    height_unit: Literal["mm", "in"] | None = Field(default=None)
+
+
+class DrawPolyline(Command):
+    type: Literal["draw_polyline"] = "draw_polyline"
+    points: list[Coordinate] = Field(default_factory=list)
+    closed: bool = Field(default=False)
+
+
+class DrawArc(Command):
+    type: Literal["draw_arc"] = "draw_arc"
+    center: Coordinate = Field(default_factory=Coordinate)
+    radius: float | None = Field(default=None, ge=0)
+    radius_unit: Literal["mm", "in"] | None = Field(default=None)
+    start_angle: float | None = Field(default=None, description="Start angle in degrees")
+    end_angle: float | None = Field(default=None, description="End angle in degrees")
+
+
+class DrawEllipse(Command):
+    type: Literal["draw_ellipse"] = "draw_ellipse"
+    center: Coordinate = Field(default_factory=Coordinate)
+    rx: float | None = Field(default=None, ge=0)
+    rx_unit: Literal["mm", "in"] | None = Field(default=None)
+    ry: float | None = Field(default=None, ge=0)
+    ry_unit: Literal["mm", "in"] | None = Field(default=None)
+    rotation: float | None = Field(default=0.0, description="Rotation in degrees")
+
+
+class DrawText(Command):
+    type: Literal["draw_text"] = "draw_text"
+    text: str = Field(default="", description="Label contents")
+    position: Coordinate = Field(default_factory=Coordinate)
+    height: float | None = Field(default=None, ge=0)
+    height_unit: Literal["mm", "in"] | None = Field(default=None)
 
 
 CommandType = Annotated[
-    DrawCircle | DrawLine | DrawRect,
+    DrawCircle | DrawLine | DrawRect | DrawPolyline | DrawArc | DrawEllipse | DrawText,
     Field(discriminator="type"),
 ]
 

@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
-from .errors import E_PROVIDER_MISSING, raise_error
+from .errors import E_PROVIDER_MISSING, ParseError, raise_error
 
 
 class BaseLLMProvider(ABC):
@@ -22,7 +22,7 @@ class BaseLLMProvider(ABC):
     @abstractmethod
     def parse(
         self, text: str, schema: dict[str, Any], *, context: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+    ) -> dict[str, Any] | str:
         """Parse ``text`` against ``schema`` using the provider."""
 
 
@@ -77,18 +77,41 @@ class ProviderRegistry:
 REGISTRY = ProviderRegistry()
 REGISTRY.register("mock", lambda cfg: MockProvider(**cfg))
 
+try:  # Register optional LangChain providers when available
+    from app.ai import register_langchain_providers
+
+    register_langchain_providers(REGISTRY)
+except ParseError:
+    # If LangChain dependencies are missing we continue with the mock provider only.
+    pass
+
 
 def configure_provider(name: str | None = None, **overrides: Any) -> BaseLLMProvider:
     """Create a provider based on environment variables and overrides."""
 
-    provider_name = name or os.getenv("AI_AUTOCAD_PROVIDER", "mock")
-    api_key = overrides.pop("api_key", None) or os.getenv("AI_AUTOCAD_API_KEY")
+    provider_name = name or os.getenv("AI_PROVIDER") or os.getenv("AI_AUTOCAD_PROVIDER") or "mock"
 
-    config = {"api_key": api_key}
+    if provider_name is None or provider_name.lower() in {"none", "off", "disabled"}:
+        raise_error(E_PROVIDER_MISSING, detail="LLM provider disabled.")
+
+    api_key = (
+        overrides.pop("api_key", None) or os.getenv("AI_API_KEY") or os.getenv("AI_AUTOCAD_API_KEY")
+    )
+    model = overrides.pop("model", None) or os.getenv("AI_MODEL")
+    temperature = overrides.pop("temperature", None) or os.getenv("AI_TEMPERATURE")
+
+    config: dict[str, Any] = {}
+    if api_key:
+        config["api_key"] = api_key
+    if model:
+        config["model"] = model
+    if temperature:
+        try:
+            config["temperature"] = float(temperature)
+        except ValueError:  # pragma: no cover - defensive parsing
+            config["temperature"] = temperature
+
     config.update({k: v for k, v in overrides.items() if v is not None})
-
-    if provider_name is None:
-        raise_error(E_PROVIDER_MISSING)
 
     return REGISTRY.get(provider_name, config)
 

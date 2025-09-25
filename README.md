@@ -31,8 +31,11 @@ Runtime configuration is handled by [`app/core/config.py`](app/core/config.py). 
 adjust settings as needed. Supported keys:
 
 - `DEFAULT_UNITS` – controls default parsing/export units (`mm` or `in`).
-- `AI_AUTOCAD_PROVIDER` – selects the LLM backend (`mock`, `openai`, etc.).
-- `AI_AUTOCAD_API_KEY` – API token for hosted LLM providers (unused by the mock provider).
+- `AI_PROVIDER` – selects the LLM backend (`mock`, `openai`, `groq`, `llama3`).
+- `AI_MODEL` – optional model override for the active provider.
+- `AI_API_KEY` – API token for hosted LLM providers (unused by the mock provider).
+- `AI_TEMPERATURE` – optional float to control sampling temperature.
+  Legacy variables `AI_AUTOCAD_PROVIDER` and `AI_AUTOCAD_API_KEY` remain supported for compatibility.
 
 ## Units & Precision
 
@@ -42,13 +45,32 @@ rounding. Helper functions include `parse_length`, `to_mm`, `from_mm`, and `conv
 
 ## CAD Core
 
-Stage 03 introduces typed models for 2D primitives and a DXF writer:
+Stage 03 introduces typed models for 2D primitives and a DXF writer. The current release extends these pieces to
+cover the full geometry set required by the hybrid CLI:
 
-- [`app/cad/models.py`](app/cad/models.py) defines `Point`, `Line`, `Circle`, and `Rect`.
+- [`app/cad/models.py`](app/cad/models.py) defines `Point`, `Line`, `Circle`, `Rect`, `Polyline`, `Arc`, `Ellipse`,
+  and `Text` entities. `DrawingBundle` is used to stage heterogeneous geometry prior to writing.
 - [`app/cad/writer.py`](app/cad/writer.py) wraps `ezdxf` and ensures entities land on the `A-GEOM` layer.
-- [`app/cad/cli.py`](app/cad/cli.py) ships a `--demo` command that generates `out/demo_stage3.dxf`.
+- [`app/core/conversion.py`](app/core/conversion.py) converts legacy rule-parser output into the new CAD bundle.
 
-The regression suite verifies unit conversions, configuration parsing, DXF authoring, and package importability.
+The regression suite verifies unit conversions, configuration parsing, DXF authoring, and the hybrid parsing flow.
+
+## Command Line Interface
+
+Run `python -m app.main --cmd "draw a line from 0,0 to 100,50"` to process a single command. When `--cmd` is not
+provided the CLI reads one command per line from standard input until EOF. The `--no-ai` flag forces deterministic
+regex parsing only, while `--non-interactive` suppresses clarification prompts and falls back to sensible defaults.
+
+Example session with AI clarification enabled:
+
+```
+$ python -m app.main
+Enter drawing commands (Ctrl-D to finish):
+> draw rectangle at 50,50
+# CLI prompts for the missing width/height and corner coordinates here.
+> make a square 20
+DXF saved to: outputs/cli_output.dxf
+```
 
 ## Language Understanding
 
@@ -60,10 +82,12 @@ understanding:
 - [`app/dsl/parse_rule.py`](app/dsl/parse_rule.py) compiles the regex rules into
   Pydantic-backed [`Command`](app/dsl/commands.py) models and produces actionable validation
   errors documented in [`docs/errors.md`](docs/errors.md).
-- [`app/dsl/llm_provider.py`](app/dsl/llm_provider.py) configures the selected language model
-  provider from environment variables, while [`app/dsl/llm_parser.py`](app/dsl/llm_parser.py)
+- [`app/ai/providers.py`](app/ai/providers.py) registers LangChain chat providers (OpenAI, Groq, Llama3) with the
+  shared registry exposed by [`app/dsl/llm_provider.py`](app/dsl/llm_provider.py).
+- [`app/dsl/llm_parser.py`](app/dsl/llm_parser.py)
   applies guarded prompting, schema enforcement, and automatic retries. The corresponding
   contract lives in [`docs/prompt_contract.json`](docs/prompt_contract.json).
+- [`app/dsl/compiler.py`](app/dsl/compiler.py) normalises LLM output into CAD primitives stored in millimetres.
 
 ## Clarification & Memory
 
@@ -90,14 +114,20 @@ ai-autocad-chatbot/
 │  │  ├─ llm_provider.py
 │  │  ├─ parse_rule.py
 │  │  └─ rules.py
+│  ├─ ai/
+│  │  ├─ __init__.py
+│  │  └─ providers.py
 │  ├─ cad/
 │  │  ├─ __init__.py
-│  │  ├─ cli.py
 │  │  ├─ models.py
 │  │  └─ writer.py
+│  ├─ cli/
+│  │  ├─ __init__.py
+│  │  └─ executor.py
 │  ├─ core/
 │  │  ├─ __init__.py
 │  │  ├─ config.py
+│  │  ├─ conversion.py
 │  │  ├─ dxf_writer.py
 │  │  ├─ nlp_rules.py
 │  │  └─ units.py

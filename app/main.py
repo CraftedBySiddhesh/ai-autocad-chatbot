@@ -1,86 +1,54 @@
 from __future__ import annotations
 
 import argparse
-import math
+import sys
 from pathlib import Path
 
-from app.core.dxf_writer import render
-from app.core.nlp_rules import Program, parse
+from app.cli.executor import execute_commands, load_commands
 
 
-def make_preview(program: Program, png_path: Path) -> None:
-    import matplotlib.pyplot as plt  # type: ignore[import-not-found]
-
-    fig = plt.figure()
-    ax = plt.gca()
-
-    for c in program.circles:
-        th = [t / 180 * math.pi for t in range(0, 361)]
-        xs = [c.x + c.r * math.cos(t) for t in th]
-        ys = [c.y + c.r * math.sin(t) for t in th]
-        ax.plot(xs, ys)
-    for line in program.lines:
-        ax.plot([line.x1, line.x2], [line.y1, line.y2])
-    for r in program.rects:
-        xs = [r.x, r.x + r.w, r.x + r.w, r.x, r.x]
-        ys = [r.y, r.y, r.y + r.h, r.y + r.h, r.y]
-        ax.plot(xs, ys)
-    for a in program.arcs:
-        th = [t / 180 * math.pi for t in range(int(a.a1), int(a.a2) + 1)]
-        xs = [a.x + a.r * math.cos(t) for t in th]
-        ys = [a.y + a.r * math.sin(t) for t in th]
-        ax.plot(xs, ys)
-    for pl in program.polylines:
-        xs = [p[0] for p in pl.pts]
-        ys = [p[1] for p in pl.pts]
-        if pl.closed and pl.pts and pl.pts[0] != pl.pts[-1]:
-            xs.append(pl.pts[0][0])
-            ys.append(pl.pts[0][1])
-        ax.plot(xs, ys)
-    for e in program.ellipses:
-        th = [t / 180 * math.pi for t in range(0, 361)]
-        xs = [e.x + e.rx * math.cos(t) for t in th]
-        ys = [e.y + e.ry * math.sin(t) for t in th]
-        ax.plot(xs, ys)
-    for tx in program.texts:
-        ax.text(tx.x, tx.y, tx.text, fontsize=8)
-
-    ax.set_aspect('equal', adjustable='box')
-    ax.grid(True)
-    fig.savefig(png_path, dpi=140, bbox_inches="tight")
-    plt.close(fig)
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("command", help="Natural language drawing command (quote it)")
-    parser.add_argument("--preview", action="store_true", help="Save a PNG preview next to the DXF")
-    args = parser.parse_args()
-
-    program = parse(args.command)
-
-    print(
-        f"Summary -> circles:{len(program.circles)} lines:{len(program.lines)} rects:{len(program.rects)} arcs:{len(program.arcs)} plines:{len(program.polylines)} ellipses:{len(program.ellipses)} texts:{len(program.texts)}"
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="AI assisted CAD command line interface")
+    parser.add_argument("--cmd", type=str, help="Single natural language command to execute")
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=Path("outputs/cli_output.dxf"),
+        help="Destination DXF file path",
     )
-    if not (
-        program.circles
-        or program.lines
-        or program.rects
-        or program.arcs
-        or program.polylines
-        or program.ellipses
-        or program.texts
-    ):
-        print("No entities parsed from your command. Nothing to draw.")
-        raise SystemExit(2)
+    parser.add_argument(
+        "--no-ai",
+        action="store_true",
+        help="Disable LLM parsing and rely solely on deterministic rules",
+    )
+    parser.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="Do not prompt for missing information; always use defaults",
+    )
+    return parser
 
-    out = render(program)
-    print(f"DXF saved to: {out}")
 
-    if args.preview:
-        png_path = Path(out).with_suffix(".png")
-        make_preview(program, png_path)
-        print(f"Preview saved to: {png_path}")
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    commands = load_commands(args.cmd, sys.stdin)
+    if not commands:
+        raise SystemExit("No commands provided")
+
+    try:
+        output = execute_commands(
+            commands,
+            output=args.out,
+            enable_ai=not args.no_ai,
+            interactive=not args.non_interactive,
+        )
+    except RuntimeError as exc:  # pragma: no cover - user feedback path
+        print(f"Error: {exc}")
+        raise SystemExit(2) from exc
+
+    print(f"DXF saved to: {output}")
 
 
 if __name__ == "__main__":
