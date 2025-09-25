@@ -14,7 +14,12 @@ UnitsLiteral = Literal["mm", "in"]
 class Settings(BaseSettings):
     """Central application settings loaded from environment variables."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
     default_units: UnitsLiteral = Field(
         default="mm",
