@@ -26,10 +26,7 @@ def _resolve_api_key(provider_name: str, explicit: str | SecretStr | None) -> st
     """Resolve an API key for the given provider."""
 
     candidates: list[str] = []
-    if isinstance(explicit, SecretStr):
-        explicit_value = explicit.get_secret_value()
-    else:
-        explicit_value = explicit
+    explicit_value = explicit.get_secret_value() if isinstance(explicit, SecretStr) else explicit
     if explicit_value:
         candidates.append(explicit_value)
     provider_name = provider_name.lower()
