@@ -1,29 +1,50 @@
-# Python
+# Python artifacts
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 *.pyo
 *.pyd
 *.pkl
-*.sqlite3
 
-# Virtual env
+# Packaging
+build/
+dist/
+*.egg-info/
+.pip-wheel-metadata/
+
+# Virtual environments
 .venv/
-env/
 venv/
+env/
 
-# IDE
+# Tooling caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.cache/
+
+# Editors
 .vscode/
 .idea/
 
-# Artifacts
-dist/
-build/
-htmlcov/
-.coverage*
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
+# Environment files
+.env
+.env.*
+!.env.example
 
 # Project outputs
-outputs/*
+outputs/
 !outputs/.gitkeep
+out/
+
+# Coverage & reports
+.coverage*
+htmlcov/
+
+# Pip-tools artifacts
+pip-wheel-metadata/
+
+# Misc
+.DS_Store
+Thumbs.db

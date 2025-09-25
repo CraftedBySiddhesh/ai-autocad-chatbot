@@ -27,8 +27,20 @@ def render(program: Program, out_path: str | None = None) -> str:
     for line in program.lines:
         msp.add_line((line.x1, line.y1), (line.x2, line.y2), dxfattribs={"layer": "LINES"})
     for r in program.rects:
+        if r.anchor == "center":
+            base_x = r.x - r.w / 2
+            base_y = r.y - r.h / 2
+        else:
+            base_x = r.x
+            base_y = r.y
         msp.add_lwpolyline(
-            [(r.x, r.y), (r.x + r.w, r.y), (r.x + r.w, r.y + r.h), (r.x, r.y + r.h), (r.x, r.y)],
+            [
+                (base_x, base_y),
+                (base_x + r.w, base_y),
+                (base_x + r.w, base_y + r.h),
+                (base_x, base_y + r.h),
+                (base_x, base_y),
+            ],
             close=True,
             dxfattribs={"layer": "RECTS"},
         )
