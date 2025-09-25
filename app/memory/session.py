@@ -1,10 +1,12 @@
 """In-memory session store with TTL semantics."""
+
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from app.dsl.errors import E_MEMORY_EXPIRED, raise_error
+
 from .store import ProjectMemoryStore
 
 
@@ -19,8 +21,8 @@ class SessionMemory:
         self.ttl = ttl
         self.store = store
         self.project_id = project_id
-        self._data: Dict[str, Tuple[Any, float | None]] = {}
-        self._defaults: Dict[str, Any] = store.load_project(project_id) if store else {}
+        self._data: dict[str, tuple[Any, float | None]] = {}
+        self._defaults: dict[str, Any] = store.load_project(project_id) if store else {}
 
     def _expiry_for(self, ttl: float | None) -> float | None:
         effective_ttl = self.ttl if ttl is None else ttl

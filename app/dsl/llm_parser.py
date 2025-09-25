@@ -1,15 +1,15 @@
 """LLM-backed parser that conforms to the command schema with retries."""
+
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import ValidationError
 
 from .commands import CommandList, CommandType
 from .errors import E_SCHEMA_VALIDATION, raise_error
 from .llm_provider import BaseLLMProvider, configure_provider
-
 
 _PROMPT_TEMPLATE = """
 You are a CAD command extraction assistant.
@@ -27,8 +27,12 @@ class LLMParser:
         self.max_retries = max(1, max_retries)
 
     @staticmethod
-    def _format_prompt(utterance: str, schema: dict[str, Any], errors: list[dict[str, Any]] | None = None) -> str:
-        prompt = _PROMPT_TEMPLATE.format(schema=json.dumps(schema, indent=2, sort_keys=True), utterance=utterance)
+    def _format_prompt(
+        utterance: str, schema: dict[str, Any], errors: list[dict[str, Any]] | None = None
+    ) -> str:
+        prompt = _PROMPT_TEMPLATE.format(
+            schema=json.dumps(schema, indent=2, sort_keys=True), utterance=utterance
+        )
         if errors:
             prompt += "\nPrevious response failed validation with these issues:\n"
             prompt += json.dumps(errors, indent=2, sort_keys=True)
@@ -41,7 +45,7 @@ class LLMParser:
 
         for attempt in range(self.max_retries):
             prompt = self._format_prompt(text, schema, errors)
-            provider_context: Dict[str, Any] = {"attempt": attempt}
+            provider_context: dict[str, Any] = {"attempt": attempt}
             if context:
                 provider_context.update(context)
             if errors:
@@ -74,7 +78,9 @@ class LLMParser:
         raise_error(E_SCHEMA_VALIDATION, detail=detail)
 
 
-def llm_parse(text: str, context: dict[str, Any] | None = None, *, parser: LLMParser | None = None) -> list[CommandType]:
+def llm_parse(
+    text: str, context: dict[str, Any] | None = None, *, parser: LLMParser | None = None
+) -> list[CommandType]:
     parser = parser or LLMParser()
     return parser.parse(text, context=context)
 

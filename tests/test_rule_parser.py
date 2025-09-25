@@ -1,9 +1,8 @@
 import pytest
 
 from app.dsl.commands import Coordinate, DrawCircle, DrawLine, DrawRect
-from app.dsl.errors import ParseError, E_COORDINATE_SYNTAX
+from app.dsl.errors import E_COORDINATE_SYNTAX, ParseError
 from app.dsl.parse_rule import parse_rule
-
 
 CANONICAL_CASES = [
     (

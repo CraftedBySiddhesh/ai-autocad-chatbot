@@ -1,10 +1,12 @@
 """Provider abstraction for the LLM-backed parser."""
+
 from __future__ import annotations
 
 import json
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict
+from collections.abc import Callable
+from typing import Any
 
 from .errors import E_PROVIDER_MISSING, raise_error
 
@@ -18,7 +20,9 @@ class BaseLLMProvider(ABC):
         self.config = config
 
     @abstractmethod
-    def parse(self, text: str, schema: Dict[str, Any], *, context: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    def parse(
+        self, text: str, schema: dict[str, Any], *, context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Parse ``text`` against ``schema`` using the provider."""
 
 
@@ -30,10 +34,10 @@ class MockProvider(BaseLLMProvider):
     def parse(
         self,
         text: str,
-        schema: Dict[str, Any],
+        schema: dict[str, Any],
         *,
-        context: Dict[str, Any] | None = None,
-    ) -> Dict[str, Any]:  # pragma: no cover - behaviour exercised indirectly
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:  # pragma: no cover - behaviour exercised indirectly
         # The mock provider expects the prompt to already be a JSON payload.
         try:
             payload = json.loads(text)

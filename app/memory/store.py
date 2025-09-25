@@ -1,9 +1,10 @@
 """Project scoped persistence for clarification defaults."""
+
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 
 class ProjectMemoryStore:
@@ -15,15 +16,15 @@ class ProjectMemoryStore:
         if not self.path.exists():
             self._write({})
 
-    def _read(self) -> Dict[str, Dict[str, Any]]:
+    def _read(self) -> dict[str, dict[str, Any]]:
         with self.path.open("r", encoding="utf8") as fh:
             return json.load(fh)
 
-    def _write(self, data: Dict[str, Dict[str, Any]]) -> None:
+    def _write(self, data: dict[str, dict[str, Any]]) -> None:
         with self.path.open("w", encoding="utf8") as fh:
             json.dump(data, fh, indent=2, sort_keys=True)
 
-    def load_project(self, project_id: str) -> Dict[str, Any]:
+    def load_project(self, project_id: str) -> dict[str, Any]:
         data = self._read()
         return data.get(project_id, {}).copy()
 

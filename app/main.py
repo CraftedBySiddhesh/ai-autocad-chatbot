@@ -1,14 +1,15 @@
+from __future__ import annotations
+
 import argparse
+import math
 from pathlib import Path
 
-from core.dxf_writer import render
-from core.nlp_rules import parse
+from app.core.dxf_writer import render
+from app.core.nlp_rules import Program, parse
 
 
-def make_preview(program, png_path: Path):
-    import math
-
-    import matplotlib.pyplot as plt
+def make_preview(program: Program, png_path: Path) -> None:
+    import matplotlib.pyplot as plt  # type: ignore[import-not-found]
 
     fig = plt.figure()
     ax = plt.gca()
@@ -50,7 +51,7 @@ def make_preview(program, png_path: Path):
     plt.close(fig)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("command", help="Natural language drawing command (quote it)")
     parser.add_argument("--preview", action="store_true", help="Save a PNG preview next to the DXF")
@@ -82,5 +83,5 @@ def main():
         print(f"Preview saved to: {png_path}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

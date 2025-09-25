@@ -1,9 +1,7 @@
-import json
-
 import pytest
 
 from app.dsl.commands import DrawCircle
-from app.dsl.errors import ParseError, E_SCHEMA_VALIDATION
+from app.dsl.errors import E_SCHEMA_VALIDATION, ParseError
 from app.dsl.llm_parser import LLMParser
 from app.dsl.llm_provider import BaseLLMProvider
 

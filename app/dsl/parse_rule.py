@@ -1,8 +1,10 @@
 """Deterministic parser for the canonical mini-DSL utterances."""
+
 from __future__ import annotations
 
 import re
-from typing import Iterable
+from collections.abc import Callable, Iterator
+from typing import Literal
 
 from pydantic import ValidationError
 
@@ -17,7 +19,6 @@ from .errors import (
     raise_error,
 )
 from .rules import COORDINATE_TOKEN, RELATIVE_TOKEN, RULES, Rule
-
 
 _CONNECTOR_RE = re.compile(r"\s*(?:;|\band\b)\s*", flags=re.IGNORECASE)
 
@@ -63,27 +64,28 @@ def _build_rect(rule: Rule, match: re.Match[str]) -> DrawRect:
     if width_raw is None or height_raw is None:
         raise_error(E_DIMENSION_REQUIRED)
 
-    anchor = "center" if "center" in rule.name else "corner"
+    anchor: Literal["corner", "center"] = "center" if "center" in rule.name else "corner"
     position = _coordinate_from_match(match, "position_")
 
-    return DrawRect(width=float(width_raw), height=float(height_raw), anchor=anchor, position=position)
+    return DrawRect(
+        width=float(width_raw), height=float(height_raw), anchor=anchor, position=position
+    )
 
 
-_BUILDERS = {
+Builder = Callable[[Rule, re.Match[str]], CommandType]
+
+_BUILDERS: dict[str, Builder] = {
     "draw_circle": _build_circle,
     "draw_line": _build_line,
     "draw_rect": _build_rect,
 }
 
 
-def _iter_sentences(text: str) -> Iterable[str]:
+def _iter_sentences(text: str) -> Iterator[str]:
     stripped = text.strip()
     if not stripped:
-        return []
-    for sentence in _CONNECTOR_RE.split(stripped):
-        sentence = sentence.strip()
-        if sentence:
-            yield sentence
+        return iter(())
+    return (sentence for raw in _CONNECTOR_RE.split(stripped) if (sentence := raw.strip()))
 
 
 def _check_coordinate_tokens(text: str) -> None:

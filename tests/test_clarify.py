@@ -2,9 +2,9 @@ import time
 
 import pytest
 
-from app.dsl.clarify import clarify, FollowUpQuestion, ReadyCommands
-from app.dsl.commands import Coordinate, DrawCircle, DrawRect
-from app.dsl.errors import ParseError, E_MEMORY_EXPIRED
+from app.dsl.clarify import ReadyCommands, clarify
+from app.dsl.commands import Coordinate, DrawCircle
+from app.dsl.errors import E_MEMORY_EXPIRED, ParseError
 from app.memory.session import SessionMemory
 from app.memory.store import ProjectMemoryStore
 
@@ -27,7 +27,9 @@ def test_clarify_applies_answers_and_persists_defaults(tmp_path):
     command = DrawCircle()
     followups = clarify([command], session)
     for q in followups:
-        session.set(q.id, {"circle.radius": 15, "circle.center.x": 3, "circle.center.y": 4}.get(q.field, 0))
+        session.set(
+            q.id, {"circle.radius": 15, "circle.center.x": 3, "circle.center.y": 4}.get(q.field, 0)
+        )
 
     ready = clarify([command], session)
     assert isinstance(ready, ReadyCommands)

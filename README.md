@@ -31,6 +31,8 @@ Runtime configuration is handled by [`app/core/config.py`](app/core/config.py). 
 adjust settings as needed. Supported keys:
 
 - `DEFAULT_UNITS` – controls default parsing/export units (`mm` or `in`).
+- `AI_AUTOCAD_PROVIDER` – selects the LLM backend (`mock`, `openai`, etc.).
+- `AI_AUTOCAD_API_KEY` – API token for hosted LLM providers (unused by the mock provider).
 
 ## Units & Precision
 
@@ -69,7 +71,8 @@ Stage 06 introduces a clarification engine and multi-tiered memory to bridge inc
 utterances:
 
 - [`app/dsl/clarify.py`](app/dsl/clarify.py) detects missing command fields and generates
-  targeted follow-up questions, merging answers into ready-to-execute commands.
+  targeted follow-up questions, merging answers into ready-to-execute commands. Example
+  dialog flows are captured in [`docs/clarification.md`](docs/clarification.md).
 - [`app/memory/session.py`](app/memory/session.py) and [`app/memory/store.py`](app/memory/store.py)
   provide session-scoped defaults and project persistence to reuse prior context.
 

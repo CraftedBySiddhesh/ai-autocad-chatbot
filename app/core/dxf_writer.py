@@ -1,5 +1,6 @@
 from math import pi
 from pathlib import Path
+from typing import Any, cast
 
 import ezdxf
 
@@ -62,9 +63,11 @@ def render(program: Program, out_path: str | None = None) -> str:
             dxfattribs={"layer": "ELLIPSES"},
         )
     for tx in program.texts:
-        msp.add_text(tx.text, dxfattribs={"height": tx.height, "layer": "TEXTS"}).set_pos(
-            (tx.x, tx.y)
+        text = msp.add_text(
+            tx.text,
+            dxfattribs={"height": tx.height, "layer": "TEXTS"},
         )
+        cast(Any, text).set_pos((tx.x, tx.y))
 
     # Output path
     if out_path:

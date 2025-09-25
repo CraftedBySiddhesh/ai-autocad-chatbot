@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from decimal import Decimal
 from pathlib import Path
-from typing import Iterable
 
 import ezdxf
 
-from .models import Circle, Line, Point, Rect, DEFAULT_LAYER
+from .models import DEFAULT_LAYER, Circle, Line, Point, Rect
 
 DXF_VERSION = "R2018"
 
@@ -47,12 +48,17 @@ class DxfWriter:
 def demo(path: str | Path) -> Path:
     writer = DxfWriter()
     writer.add_line(
-        Line(start=Point(x=0, y=0), end=Point(x=100, y=0))
+        Line(
+            start=Point(x=Decimal("0"), y=Decimal("0")),
+            end=Point(x=Decimal("100"), y=Decimal("0")),
+        )
     )
-    writer.add_circle(
-        Circle(center=Point(x=50, y=50), radius=25)
-    )
+    writer.add_circle(Circle(center=Point(x=Decimal("50"), y=Decimal("50")), radius=Decimal("25")))
     writer.add_rect(
-        Rect(origin=Point(x=-25, y=-25), width=50, height=40)
+        Rect(
+            origin=Point(x=Decimal("-25"), y=Decimal("-25")),
+            width=Decimal("50"),
+            height=Decimal("40"),
+        )
     )
     return writer.save(path)

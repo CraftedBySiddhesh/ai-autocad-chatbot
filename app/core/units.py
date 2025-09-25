@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_HALF_UP, getcontext
 import re
+from collections.abc import Iterable
+from decimal import ROUND_HALF_UP, Decimal, getcontext
 from enum import Enum
-from typing import Iterable
 
 MM_PER_INCH = Decimal("25.4")
 MM_PRECISION = Decimal("0.000001")
@@ -52,7 +52,9 @@ def _resolve_default_unit() -> Unit:
 def _resolve_unit(unit: Unit | str | None, fallback: Unit | None = None) -> Unit:
     if isinstance(unit, Unit):
         return unit
-    return Unit.from_string(unit if unit is None or isinstance(unit, str) else str(unit), default=fallback)
+    return Unit.from_string(
+        unit if unit is None or isinstance(unit, str) else str(unit), default=fallback
+    )
 
 
 def parse_length(text: str, *, default_unit: Unit | None = None) -> Decimal:
@@ -82,7 +84,9 @@ def from_mm(value: float | int | Decimal, unit: Unit | str | None) -> Decimal:
     raise ValueError(f"Unsupported unit '{unit_enum}'")
 
 
-def convert_length(value: float | int | Decimal, from_unit: Unit | str, to_unit: Unit | str) -> Decimal:
+def convert_length(
+    value: float | int | Decimal, from_unit: Unit | str, to_unit: Unit | str
+) -> Decimal:
     mm_value = to_mm(value, from_unit)
     return from_mm(mm_value, to_unit)
 

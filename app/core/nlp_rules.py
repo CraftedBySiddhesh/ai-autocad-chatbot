@@ -1,5 +1,7 @@
-from dataclasses import dataclass
+from __future__ import annotations
+
 import re
+from dataclasses import dataclass
 
 from .units import to_mm
 
@@ -216,7 +218,15 @@ def parse(text: str) -> Program:
             m.group(5),
             m.group(6),
         )
-        arcs.append(ArcCmd(float(cx), float(cy), to_mm(float(r_val), r_unit), float(a1), float(a2)))
+        arcs.append(
+            ArcCmd(
+                float(cx),
+                float(cy),
+                float(to_mm(float(r_val), r_unit)),
+                float(a1),
+                float(a2),
+            )
+        )
 
     # POLYLINE: "polyline points: (0,0) (10,20) (30,40)" or "polyline closed points: ..."
     for m in re.finditer(
@@ -237,7 +247,15 @@ def parse(text: str) -> Program:
         rx_val, rx_unit = float(m.group(3)), (m.group(4) or "mm")
         ry_val, ry_unit = float(m.group(5)), (m.group(6) or "mm")
         rot = float(m.group(7)) if m.group(7) else 0.0
-        ellipses.append(EllipseCmd(cx, cy, to_mm(rx_val, rx_unit), to_mm(ry_val, ry_unit), rot))
+        ellipses.append(
+            EllipseCmd(
+                cx,
+                cy,
+                float(to_mm(rx_val, rx_unit)),
+                float(to_mm(ry_val, ry_unit)),
+                rot,
+            )
+        )
 
     # TEXT: 'text "Hello" at (x,y) [height <num><unit>]'
     for m in re.finditer(
@@ -245,7 +263,7 @@ def parse(text: str) -> Program:
     ):
         s, x, y = m.group(1), float(m.group(2)), float(m.group(3))
         h_val, h_unit = m.group(4), (m.group(5) or "mm")
-        height = to_mm(float(h_val), h_unit) if h_val else 100.0
+        height = float(to_mm(float(h_val), h_unit)) if h_val else 100.0
         texts.append(TextCmd(x, y, s, height))
 
     return Program(
