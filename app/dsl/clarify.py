@@ -1,12 +1,15 @@
 """Clarification engine for filling incomplete command data."""
+
 from __future__ import annotations
 
-from typing import Any, Iterable, List
+from collections.abc import Iterable
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from .commands import CommandType, DrawCircle, DrawLine, DrawRect
 from app.memory.session import SessionMemory
+
+from .commands import CommandType, DrawCircle, DrawLine, DrawRect
 
 _USE_PREVIOUS = {"use previous value", "previous", "same", "last", "prior"}
 
@@ -24,7 +27,7 @@ class FollowUpQuestion(BaseModel):
 class ReadyCommands(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    commands: List[CommandType]
+    commands: list[CommandType]
 
 
 def _normalise_answer(answer: Any) -> Any:
@@ -45,7 +48,7 @@ def _resolve_numeric(
     key: str,
     current: Any,
     prompt: str,
-    followups: List[FollowUpQuestion],
+    followups: list[FollowUpQuestion],
 ) -> float | None:
     if current is not None:
         value = float(current)
@@ -91,8 +94,17 @@ def _resolve_numeric(
     return None
 
 
-def _clarify_circle(index: int, cmd: DrawCircle, session: SessionMemory, followups: List[FollowUpQuestion]) -> DrawCircle:
-    radius = _resolve_numeric(session, index, "circle.radius", cmd.radius, "What radius should the circle have?", followups)
+def _clarify_circle(
+    index: int, cmd: DrawCircle, session: SessionMemory, followups: list[FollowUpQuestion]
+) -> DrawCircle:
+    radius = _resolve_numeric(
+        session,
+        index,
+        "circle.radius",
+        cmd.radius,
+        "What radius should the circle have?",
+        followups,
+    )
 
     center_x = _resolve_numeric(
         session,
@@ -115,7 +127,9 @@ def _clarify_circle(index: int, cmd: DrawCircle, session: SessionMemory, followu
     return cmd.model_copy(update={"radius": radius, "center": new_center})
 
 
-def _clarify_line(index: int, cmd: DrawLine, session: SessionMemory, followups: List[FollowUpQuestion]) -> DrawLine:
+def _clarify_line(
+    index: int, cmd: DrawLine, session: SessionMemory, followups: list[FollowUpQuestion]
+) -> DrawLine:
     start_x = _resolve_numeric(
         session,
         index,
@@ -157,7 +171,9 @@ def _clarify_line(index: int, cmd: DrawLine, session: SessionMemory, followups: 
     )
 
 
-def _clarify_rect(index: int, cmd: DrawRect, session: SessionMemory, followups: List[FollowUpQuestion]) -> DrawRect:
+def _clarify_rect(
+    index: int, cmd: DrawRect, session: SessionMemory, followups: list[FollowUpQuestion]
+) -> DrawRect:
     width = _resolve_numeric(
         session,
         index,
@@ -202,9 +218,11 @@ def _clarify_rect(index: int, cmd: DrawRect, session: SessionMemory, followups: 
     )
 
 
-def clarify(commands: Iterable[CommandType], session: SessionMemory) -> ReadyCommands | List[FollowUpQuestion]:
-    followups: List[FollowUpQuestion] = []
-    resolved: List[CommandType] = []
+def clarify(
+    commands: Iterable[CommandType], session: SessionMemory
+) -> ReadyCommands | list[FollowUpQuestion]:
+    followups: list[FollowUpQuestion] = []
+    resolved: list[CommandType] = []
 
     for index, command in enumerate(commands):
         if isinstance(command, DrawCircle):

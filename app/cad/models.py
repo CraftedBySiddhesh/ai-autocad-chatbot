@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,7 +17,7 @@ class Point(BaseModel):
     x: Decimal = Field(default=Decimal("0"))
     y: Decimal = Field(default=Decimal("0"))
 
-    def as_tuple(self) -> Tuple[float, float]:
+    def as_tuple(self) -> tuple[float, float]:
         return float(self.x), float(self.y)
 
 
@@ -27,7 +26,7 @@ class Line(BaseModel):
     end: Point
     layer: str = Field(default=DEFAULT_LAYER)
 
-    def as_dxf(self) -> tuple[Tuple[float, float], Tuple[float, float], str]:
+    def as_dxf(self) -> tuple[tuple[float, float], tuple[float, float], str]:
         return self.start.as_tuple(), self.end.as_tuple(), self.layer
 
 
@@ -36,7 +35,7 @@ class Circle(BaseModel):
     radius: Decimal = Field(gt=Decimal("0"))
     layer: str = Field(default=DEFAULT_LAYER)
 
-    def as_dxf(self) -> tuple[Tuple[float, float], float, str]:
+    def as_dxf(self) -> tuple[tuple[float, float], float, str]:
         return self.center.as_tuple(), float(self.radius), self.layer
 
 
@@ -46,7 +45,7 @@ class Rect(BaseModel):
     height: Decimal = Field(gt=Decimal("0"))
     layer: str = Field(default=DEFAULT_LAYER)
 
-    def as_polyline(self) -> tuple[list[Tuple[float, float]], str]:
+    def as_polyline(self) -> tuple[list[tuple[float, float]], str]:
         ox, oy = self.origin.as_tuple()
         width = float(self.width)
         height = float(self.height)

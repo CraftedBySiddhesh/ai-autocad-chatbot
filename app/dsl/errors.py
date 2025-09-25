@@ -1,4 +1,5 @@
 """Error codes and exception classes for DSL components."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

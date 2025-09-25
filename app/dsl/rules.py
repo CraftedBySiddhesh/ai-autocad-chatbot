@@ -1,9 +1,10 @@
 """Regular expressions used by the deterministic mini-DSL parser."""
+
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Pattern
+from re import Pattern
 
 
 def _coord_pattern(prefix: str, allow_relative: bool = False) -> str:
@@ -106,7 +107,9 @@ RULES: list[Rule] = [
 
 
 COORDINATE_TOKEN = re.compile(r"^\s*\(\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*\)\s*$")
-RELATIVE_TOKEN = re.compile(r"^\s*rel(?:ative)?\s*\(\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*\)\s*$", re.IGNORECASE)
+RELATIVE_TOKEN = re.compile(
+    r"^\s*rel(?:ative)?\s*\(\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*\)\s*$", re.IGNORECASE
+)
 
 
 __all__ = ["RULES", "COORDINATE_TOKEN", "RELATIVE_TOKEN"]

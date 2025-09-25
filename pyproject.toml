@@ -7,7 +7,7 @@ name = "ai-autocad-chatbot"
 version = "0.1.0"
 description = "Conversational assistant that produces CAD artifacts from text and sketches."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 authors = [
     { name = "AI AutoCAD Chatbot Team" }
 ]
@@ -21,7 +21,6 @@ skip-string-normalization = true
 [tool.isort]
 profile = "black"
 line_length = 100
-force_sort_within_sections = true
 known_first_party = ["app", "tests"]
 
 [tool.ruff]
@@ -43,7 +42,6 @@ warn_unused_ignores = true
 show_error_codes = true
 pretty = true
 namespace_packages = true
-mypy_path = "app"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
