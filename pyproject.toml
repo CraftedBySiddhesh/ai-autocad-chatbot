@@ -1,6 +1,21 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-autocad-chatbot"
+version = "0.1.0"
+description = "Conversational assistant that produces CAD artifacts from text and sketches."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "AI AutoCAD Chatbot Team" }
+]
+dependencies = []
+
 [tool.black]
 line-length = 100
-target-version = ["py311"]
+target-version = ["py312"]
 skip-string-normalization = true
 
 [tool.isort]
@@ -11,13 +26,14 @@ known_first_party = ["app", "tests"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
-lint.select = ["E", "F", "I", "UP", "B", "C4", "SIM"]
+target-version = "py312"
+extend-include = ["*.pyi"]
+lint.select = ["E", "F", "I", "B", "UP", "SIM", "C4"]
 lint.ignore = ["E203", "E501"]
 lint.isort = { known-first-party = ["app", "tests"] }
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
@@ -27,3 +43,17 @@ warn_unused_ignores = true
 show_error_codes = true
 pretty = true
 namespace_packages = true
+mypy_path = "app"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["app"]
+

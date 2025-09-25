@@ -19,6 +19,15 @@ def test_rect_defaults():
     assert r.w == 100.0 and r.h == 100.0 and r.x == 10 and r.y == 10
 
 
+def test_rect_center_shorthand():
+    p = parse("make a rectangle 40x20 with center at (0,0)")
+    assert len(p.rects) == 1
+    rect = p.rects[0]
+    assert rect.anchor == "center"
+    assert rect.w == 40.0 and rect.h == 20.0
+    assert rect.x == 0.0 and rect.y == 0.0
+
+
 def test_arc():
     p = parse("draw an arc radius 40 mm at (0,0) from 0 to 90")
     assert len(p.arcs) == 1

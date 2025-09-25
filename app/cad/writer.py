@@ -1,0 +1,58 @@
+"""DXF authoring utilities for Stage 03."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Iterable
+
+import ezdxf
+
+from .models import Circle, Line, Point, Rect, DEFAULT_LAYER
+
+DXF_VERSION = "R2018"
+
+
+class DxfWriter:
+    """Incrementally build a DXF document."""
+
+    def __init__(self) -> None:
+        self.doc = ezdxf.new(DXF_VERSION)
+        self.msp = self.doc.modelspace()
+        self._ensure_layers([DEFAULT_LAYER])
+
+    def _ensure_layers(self, layers: Iterable[str]) -> None:
+        for layer in layers:
+            if layer not in self.doc.layers:
+                self.doc.layers.add(layer)
+
+    def add_line(self, line: Line) -> None:
+        start, end, layer = line.as_dxf()
+        self.msp.add_line(start, end, dxfattribs={"layer": layer})
+
+    def add_circle(self, circle: Circle) -> None:
+        center, radius, layer = circle.as_dxf()
+        self.msp.add_circle(center, radius, dxfattribs={"layer": layer})
+
+    def add_rect(self, rect: Rect) -> None:
+        points, layer = rect.as_polyline()
+        self.msp.add_lwpolyline(points, close=True, dxfattribs={"layer": layer})
+
+    def save(self, path: str | Path) -> Path:
+        output_path = Path(path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        self.doc.saveas(output_path)
+        return output_path.resolve()
+
+
+def demo(path: str | Path) -> Path:
+    writer = DxfWriter()
+    writer.add_line(
+        Line(start=Point(x=0, y=0), end=Point(x=100, y=0))
+    )
+    writer.add_circle(
+        Circle(center=Point(x=50, y=50), radius=25)
+    )
+    writer.add_rect(
+        Rect(origin=Point(x=-25, y=-25), width=50, height=40)
+    )
+    return writer.save(path)

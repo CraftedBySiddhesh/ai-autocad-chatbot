@@ -124,9 +124,9 @@ def parse(text: str) -> Program:
             m.group(6),
         )
         if rad_num:
-            r = to_mm(float(rad_num), rad_unit or "mm")
+            r = float(to_mm(float(rad_num), rad_unit or "mm"))
         elif pre_num:
-            r = to_mm(float(pre_num), pre_unit or "mm")
+            r = float(to_mm(float(pre_num), pre_unit or "mm"))
         else:
             continue
         circles.append(CircleCmd(float(cx), float(cy), float(r)))
@@ -136,25 +136,71 @@ def parse(text: str) -> Program:
         x1, y1, x2, y2 = float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4))
         lines.append(LineCmd(x1, y1, x2, y2))
 
-    # RECT with defaults if missing w/h
-    for m in re.finditer(
-        rf"\brectangle\b(?:.*?\bwidth\s*{float_unit})?(?:.*?\bheight\s*{float_unit})?(?:.*?\bat\s*{coord})?",
-        t,
+    rect_chunk_re = re.compile(
+        r"\brectangle\b.*?(?=\b(?:circle|line|arc|polyline|ellipse|text|save|rectangle)\b|$)",
+        flags=re.I | re.S,
+    )
+    width_re = re.compile(rf"\bwidth\s*{float_unit}", flags=re.I)
+    height_re = re.compile(rf"\bheight\s*{float_unit}", flags=re.I)
+    shorthand_re = re.compile(
+        rf"{float_unit}\s*(?:x|×|by)\s*{float_unit}",
         flags=re.I,
-    ):
-        # width/height capture order: w_val,w_unit,h_val,h_unit,(x,y)
-        groups = m.groups()
-        w_val = groups[0]
-        w_unit = groups[1]
-        h_val = groups[2]
-        h_unit = groups[3]
-        x = groups[4]
-        y = groups[5]
-        wmm = to_mm(float(w_val), w_unit or "mm") if w_val else 100.0
-        hmm = to_mm(float(h_val), h_unit or "mm") if h_val else 100.0
-        xx = float(x) if x else 0.0
-        yy = float(y) if y else 0.0
-        rects.append(RectCmd(xx, yy, wmm, hmm))
+    )
+    center_re = re.compile(
+        rf"(?:with\s+)?cent(?:er|re)(?:ed)?(?:\s+(?:at|on))?\s*{coord}",
+        flags=re.I,
+    )
+    for rm in rect_chunk_re.finditer(t):
+        chunk = rm.group(0)
+        wmm: float | None = None
+        hmm: float | None = None
+
+        m_width = width_re.search(chunk)
+        if m_width:
+            w_val, w_unit = m_width.group(1), m_width.group(2)
+            wmm = float(to_mm(float(w_val), w_unit or "mm"))
+
+        m_height = height_re.search(chunk)
+        if m_height:
+            h_val, h_unit = m_height.group(1), m_height.group(2)
+            hmm = float(to_mm(float(h_val), h_unit or "mm"))
+
+        if wmm is None or hmm is None:
+            m_sh = shorthand_re.search(chunk)
+            if m_sh:
+                w_val, w_unit, h_val, h_unit = (
+                    m_sh.group(1),
+                    m_sh.group(2),
+                    m_sh.group(3),
+                    m_sh.group(4),
+                )
+                if wmm is None:
+                    wmm = float(to_mm(float(w_val), w_unit or "mm"))
+                if hmm is None:
+                    hmm = float(to_mm(float(h_val), h_unit or "mm"))
+
+        wmm = wmm if wmm is not None else 100.0
+        hmm = hmm if hmm is not None else 100.0
+
+        anchor = "ll"
+        x = 0.0
+        y = 0.0
+
+        m_center = center_re.search(chunk)
+        chunk_for_at = chunk
+        if m_center:
+            anchor = "center"
+            x = float(m_center.group(1))
+            y = float(m_center.group(2))
+            chunk_for_at = chunk[: m_center.start()] + chunk[m_center.end() :]
+
+        if anchor == "ll":
+            m_at = re.search(rf"\bat\s*{coord}", chunk_for_at, flags=re.I)
+            if m_at:
+                x = float(m_at.group(1))
+                y = float(m_at.group(2))
+
+        rects.append(RectCmd(x, y, wmm, hmm, anchor))
 
     # ARC: "arc radius <num><unit> at (cx,cy) from <a1> to <a2>" (degrees)
     for m in re.finditer(
