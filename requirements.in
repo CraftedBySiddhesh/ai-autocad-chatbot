@@ -4,3 +4,5 @@ pydantic>=2.6
 pydantic-settings>=2.2
 python-dotenv>=1.0
 langchain-core>=0.1.42
+langchain-openai>=0.1.8
+langchain-groq>=0.1.4

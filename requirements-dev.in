@@ -4,7 +4,7 @@
 black>=24.4
 isort>=5.13
 mypy>=1.18
-pip-tools>=7.4
+pip-tools>=7.4,<7.5
 pre-commit>=3.6
 pytest>=8.1
 ruff>=0.4

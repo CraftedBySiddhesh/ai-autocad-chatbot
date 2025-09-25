@@ -4,11 +4,23 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from decimal import Decimal
+from math import cos, pi, radians, sin
 from pathlib import Path
+from typing import Any, cast
 
 import ezdxf
 
-from .models import DEFAULT_LAYER, Circle, Line, Point, Rect
+from .models import (
+    DEFAULT_LAYER,
+    Arc,
+    Circle,
+    Ellipse,
+    Line,
+    Point,
+    Polyline,
+    Rect,
+    Text,
+)
 
 DXF_VERSION = "R2018"
 
@@ -37,6 +49,39 @@ class DxfWriter:
     def add_rect(self, rect: Rect) -> None:
         points, layer = rect.as_polyline()
         self.msp.add_lwpolyline(points, close=True, dxfattribs={"layer": layer})
+
+    def add_polyline(self, polyline: Polyline) -> None:
+        points, closed, layer = polyline.as_dxf()
+        if not points:
+            return
+        self.msp.add_lwpolyline(points, close=closed, dxfattribs={"layer": layer})
+
+    def add_arc(self, arc: Arc) -> None:
+        center, radius, start, end, layer = arc.as_dxf()
+        self.msp.add_arc(center, radius, start, end, dxfattribs={"layer": layer})
+
+    def add_ellipse(self, ellipse: Ellipse) -> None:
+        center, rx, ry, rotation, layer = ellipse.as_dxf()
+        if rx == 0:
+            return
+        ratio = ry / rx
+        angle = radians(rotation)
+        major_axis = (rx * cos(angle), rx * sin(angle))
+        self.msp.add_ellipse(
+            center=center,
+            major_axis=major_axis,
+            ratio=ratio,
+            start_param=0.0,
+            end_param=2 * pi,
+            dxfattribs={"layer": layer},
+        )
+
+    def add_text(self, text: Text) -> None:
+        content, position, height, layer = text.as_dxf()
+        entity = cast(
+            Any, self.msp.add_text(content, dxfattribs={"layer": layer, "height": height})
+        )
+        entity.set_pos(position)
 
     def save(self, path: str | Path) -> Path:
         output_path = Path(path)
