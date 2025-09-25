@@ -7,6 +7,8 @@ import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from pydantic import SecretStr
+
 from app.dsl.errors import E_PROVIDER_MISSING, raise_error
 from app.dsl.llm_provider import BaseLLMProvider
 
@@ -20,12 +22,13 @@ class _HistoryEntry:
     response: str
 
 
-def _resolve_api_key(provider_name: str, explicit: str | None) -> str:
+def _resolve_api_key(provider_name: str, explicit: str | SecretStr | None) -> str:
     """Resolve an API key for the given provider."""
 
     candidates: list[str] = []
-    if explicit:
-        candidates.append(explicit)
+    explicit_value = explicit.get_secret_value() if isinstance(explicit, SecretStr) else explicit
+    if explicit_value:
+        candidates.append(explicit_value)
     provider_name = provider_name.lower()
     if provider_name == "openai":
         candidates.extend([os.getenv("OPENAI_API_KEY", ""), os.getenv("AI_API_KEY", "")])
@@ -37,23 +40,48 @@ def _resolve_api_key(provider_name: str, explicit: str | None) -> str:
     raise_error(E_PROVIDER_MISSING, detail=f"Missing API key for provider '{provider_name}'.")
 
 
-def _load_openai(model: str | None, api_key: str, temperature: float) -> Any:
-    from langchain_openai import ChatOpenAI  # type: ignore[import-not-found]
+def _load_openai(model: str | None, api_key: SecretStr, temperature: float) -> Any:
+    try:
+        from langchain_openai import ChatOpenAI
+    except ImportError as exc:  # pragma: no cover - handled in unit tests
+        raise_error(
+            E_PROVIDER_MISSING,
+            detail="LangChain OpenAI integration is not installed.",
+            cause=exc,
+        )
 
     return ChatOpenAI(model=model or "gpt-4o-mini", api_key=api_key, temperature=temperature)
 
 
-def _load_groq(model: str | None, api_key: str, temperature: float, provider: str) -> Any:
-    from langchain_groq import ChatGroq  # type: ignore[import-not-found]
+def _load_groq(
+    model: str | None,
+    api_key: SecretStr,
+    temperature: float,
+    provider: str,
+) -> Any:
+    try:
+        from langchain_groq import ChatGroq
+    except ImportError as exc:  # pragma: no cover - handled in unit tests
+        raise_error(
+            E_PROVIDER_MISSING,
+            detail="LangChain Groq integration is not installed.",
+            cause=exc,
+        )
 
     resolved_model = model or ("llama3-70b-8192" if provider == "llama3" else "mixtral-8x7b-32768")
     return ChatGroq(model=resolved_model, api_key=api_key, temperature=temperature)
 
 
-def _build_llm(provider: str, *, model: str | None, api_key: str | None, temperature: float) -> Any:
+def _build_llm(
+    provider: str,
+    *,
+    model: str | None,
+    api_key: str | SecretStr | None,
+    temperature: float,
+) -> Any:
     """Instantiate a LangChain chat model based on configuration."""
 
-    key = _resolve_api_key(provider, api_key)
+    key = SecretStr(_resolve_api_key(provider, api_key))
     if provider == "openai":
         return _load_openai(model, key, temperature)
     if provider in {"groq", "llama3"}:
