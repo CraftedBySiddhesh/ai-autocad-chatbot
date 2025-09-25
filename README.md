@@ -4,7 +4,9 @@
 
 A conversational assistant that turns natural language or sketches into CAD deliverables. This repository is
 being developed in staged milestones; the current focus is establishing deterministic tooling, configuration,
-and a minimal CAD core that can emit DXF geometry.
+and a minimal CAD core that can emit DXF geometry. Stages 04–06 add a deterministic
+mini-DSL, an LLM-backed parser, and clarification/memory components that blend rule-based
+and generative understanding.
 
 ## Getting Started
 
@@ -46,11 +48,45 @@ Stage 03 introduces typed models for 2D primitives and a DXF writer:
 
 The regression suite verifies unit conversions, configuration parsing, DXF authoring, and package importability.
 
+## Language Understanding
+
+The Stage 04 deterministic DSL and the Stage 05 LLM parser provide layered natural language
+understanding:
+
+- [`app/dsl/rules.py`](app/dsl/rules.py) enumerates ten canonical utterance templates covering
+  lines, circles, and rectangles with absolute or relative coordinates.
+- [`app/dsl/parse_rule.py`](app/dsl/parse_rule.py) compiles the regex rules into
+  Pydantic-backed [`Command`](app/dsl/commands.py) models and produces actionable validation
+  errors documented in [`docs/errors.md`](docs/errors.md).
+- [`app/dsl/llm_provider.py`](app/dsl/llm_provider.py) configures the selected language model
+  provider from environment variables, while [`app/dsl/llm_parser.py`](app/dsl/llm_parser.py)
+  applies guarded prompting, schema enforcement, and automatic retries. The corresponding
+  contract lives in [`docs/prompt_contract.json`](docs/prompt_contract.json).
+
+## Clarification & Memory
+
+Stage 06 introduces a clarification engine and multi-tiered memory to bridge incomplete user
+utterances:
+
+- [`app/dsl/clarify.py`](app/dsl/clarify.py) detects missing command fields and generates
+  targeted follow-up questions, merging answers into ready-to-execute commands.
+- [`app/memory/session.py`](app/memory/session.py) and [`app/memory/store.py`](app/memory/store.py)
+  provide session-scoped defaults and project persistence to reuse prior context.
+
 ## Project Structure
 
 ```
 ai-autocad-chatbot/
 ├─ app/
+│  ├─ dsl/
+│  │  ├─ __init__.py
+│  │  ├─ clarify.py
+│  │  ├─ commands.py
+│  │  ├─ errors.py
+│  │  ├─ llm_parser.py
+│  │  ├─ llm_provider.py
+│  │  ├─ parse_rule.py
+│  │  └─ rules.py
 │  ├─ cad/
 │  │  ├─ __init__.py
 │  │  ├─ cli.py
@@ -62,12 +98,19 @@ ai-autocad-chatbot/
 │  │  ├─ dxf_writer.py
 │  │  ├─ nlp_rules.py
 │  │  └─ units.py
+│  ├─ memory/
+│  │  ├─ __init__.py
+│  │  ├─ session.py
+│  │  └─ store.py
 │  └─ __init__.py
 ├─ outputs/
 │  └─ .gitkeep
 ├─ tests/
+│  ├─ test_clarify.py
 │  ├─ test_dxf_writer.py
+│  ├─ test_llm_parser.py
 │  ├─ test_parser.py
+│  ├─ test_rule_parser.py
 │  ├─ test_sanity.py
 │  └─ test_units.py
 ├─ .github/workflows/ci.yml
@@ -78,6 +121,9 @@ ai-autocad-chatbot/
 ├─ Makefile
 ├─ README.md
 ├─ constraints.txt
+├─ docs/
+│  ├─ errors.md
+│  └─ prompt_contract.json
 ├─ requirements-dev.in
 ├─ requirements-dev.txt
 ├─ requirements.in

@@ -1,0 +1,30 @@
+{
+  "description": "Instructions given to LLM providers when extracting CAD commands.",
+  "system_prompt": "You are a CAD command extraction assistant. Return only JSON that matches the provided schema.",
+  "command_types": [
+    {
+      "type": "draw_circle",
+      "fields": {
+        "center": "Coordinate with x, y (absolute or relative)",
+        "radius": "Number (null when unknown)"
+      }
+    },
+    {
+      "type": "draw_line",
+      "fields": {
+        "start": "Coordinate",
+        "end": "Coordinate"
+      }
+    },
+    {
+      "type": "draw_rect",
+      "fields": {
+        "anchor": "'corner' or 'center'",
+        "position": "Coordinate corresponding to anchor",
+        "width": "Number (null when unknown)",
+        "height": "Number (null when unknown)"
+      }
+    }
+  ],
+  "schema": "See app.dsl.commands.CommandList.model_json_schema() for the authoritative schema."
+}
