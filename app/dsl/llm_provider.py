@@ -59,7 +59,11 @@ class ProviderRegistry:
         try:
             factory = self._registry[name.lower()]
         except KeyError as exc:  # pragma: no cover - defensive
-            raise_error(E_PROVIDER_MISSING, detail=f"Unknown provider '{name}'.") from exc
+            raise_error(
+                E_PROVIDER_MISSING,
+                detail=f"Unknown provider '{name}'.",
+                cause=exc,
+            )
         return factory(config)
 
     def available(self) -> list[str]:  # pragma: no cover - trivial

@@ -36,7 +36,7 @@ def _coordinate_from_match(match: re.Match[str], prefix: str) -> Coordinate:
         x = float(x_raw)
         y = float(y_raw)
     except ValueError as exc:  # pragma: no cover - defensive, regex guards numeric tokens
-        raise_error(E_COORDINATE_SYNTAX, detail=str(exc)) from exc
+        raise_error(E_COORDINATE_SYNTAX, detail=str(exc), cause=exc)
 
     rel_flag = bool(match.group(rel_group))
     return Coordinate(x=x, y=y, system="relative" if rel_flag else "absolute")

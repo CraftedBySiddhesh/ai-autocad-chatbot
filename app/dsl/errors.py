@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import NoReturn
 
 
 @dataclass(slots=True)
@@ -24,10 +25,19 @@ E_SCHEMA_VALIDATION = ("E201", "Provider response did not satisfy the command sc
 E_MEMORY_EXPIRED = ("E300", "Session memory entry has expired.")
 
 
-def raise_error(error_def: tuple[str, str], detail: str | None = None) -> ParseError:
-    """Helper that raises a :class:`ParseError` using an error tuple."""
+def raise_error(
+    error_def: tuple[str, str],
+    detail: str | None = None,
+    *,
+    cause: Exception | None = None,
+) -> NoReturn:
+    """Raise a :class:`ParseError` using an error tuple.
+
+    The optional ``cause`` argument allows callers to chain the originating
+    exception so consumers can inspect the underlying failure reason.
+    """
 
     code, message = error_def
     if detail:
         message = f"{message} {detail}".strip()
-    raise ParseError(code, message)
+    raise ParseError(code, message) from cause
